@@ -1,0 +1,10 @@
+services:
+  - type: static
+    name: patinhasmagicaspwa
+    runtime: static
+    buildCommand: curl -fsSL https://dot.net/v1/dotnet-install.sh -o dotnet-install.sh && bash dotnet-install.sh --channel 10.0 --install-dir ./.render-dotnet && PATH="$(pwd)/.render-dotnet:$PATH" dotnet publish PatinhasMagicasPWA/PatinhasMagicasPWA.csproj -c Release -o publish
+    staticPublishPath: publish/wwwroot
+    routes:
+      - type: rewrite
+        source: /*
+        destination: /index.html

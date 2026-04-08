@@ -17,13 +17,12 @@ builder.Services.AddScoped(sp =>
 {
     var handler = sp.GetRequiredService<AuthTokenHandler>();
     handler.InnerHandler = new HttpClientHandler();
+    var configuration = sp.GetRequiredService<IConfiguration>();
+    var apiBaseUrl = configuration["ApiBaseUrl"] ?? builder.HostEnvironment.BaseAddress;
 
     return new HttpClient(handler)
     {
-        //BaseAddress = new Uri ("https://zwk6xtsh-5026.brs.devtunnels.ms")
-        BaseAddress = new Uri("http://localhost:5026")
-        //BaseAddress = new Uri("https://p996dt85-5026.brs.devtunnels.ms")
-        //BaseAddress = new Uri("https://patinhasmagicasapi.onrender.com")
+        BaseAddress = new Uri(apiBaseUrl)
     };
 });
 
