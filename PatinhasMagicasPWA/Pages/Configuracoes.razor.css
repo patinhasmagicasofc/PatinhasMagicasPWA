@@ -57,6 +57,61 @@ main {
             gap: .75em;
         }
 
+        .switch-row {
+            width: 100%;
+            border: 1px solid var(--clr-primary-soft);
+            border-radius: 1.25em;
+            padding: 1em;
+            background: var(--clr-primary-soft-one);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 1em;
+        }
+
+        .switch-copy {
+            display: flex;
+            flex-direction: column;
+            align-items: flex-start;
+            gap: .2em;
+            text-align: left;
+        }
+
+        .switch-title {
+            color: var(--clr-text-main);
+            font-weight: var(--fw-sub);
+        }
+
+        .switch {
+            width: 3.5rem;
+            height: 2rem;
+            border-radius: 999px;
+            background: var(--clr-gray-light);
+            position: relative;
+            flex-shrink: 0;
+            transition: background-color .2s ease;
+        }
+
+        .switch-thumb {
+            position: absolute;
+            top: .2rem;
+            left: .2rem;
+            width: 1.6rem;
+            height: 1.6rem;
+            border-radius: 999px;
+            background: var(--clr-white);
+            box-shadow: var(--shadow-soft);
+            transition: transform .2s ease;
+        }
+
+        .switch.is-on {
+            background: var(--clr-primary);
+        }
+
+        .switch.is-on .switch-thumb {
+            transform: translateX(1.5rem);
+        }
+
         .button-group {
             padding-top: .25em;
         }

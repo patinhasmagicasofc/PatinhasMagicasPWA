@@ -14,17 +14,27 @@
         <p class="section-title">Notificacoes push</p>
         <p class="section-text">Ative para receber confirmacoes de agendamento e avisos importantes.</p>
 
+        <button type="button"
+                class="switch-row"
+                role="switch"
+                aria-checked="@pushEnabled"
+                @onclick="TogglePushAsync"
+                disabled="@loading">
+            <span class="switch-copy">
+                <span class="switch-title">Receber notificacoes</span>
+                <span class="helper-text">@GetPushStatusText()</span>
+            </span>
+            <span class="switch @(pushEnabled ? "is-on" : string.Empty)">
+                <span class="switch-thumb"></span>
+            </span>
+        </button>
+
         @if (!string.IsNullOrWhiteSpace(pushMessage))
         {
             <p class="feedback">@pushMessage</p>
         }
 
         <div class="button-group">
-            <button class="primary" @onclick="AtivarPushAsync" disabled="@loading">
-                <span class="material-symbols-outlined">notifications_active</span>
-                Ativar notificacoes
-            </button>
-
             <button class="secondary" @onclick="EnviarTestePushAsync" disabled="@loading">
                 <span class="material-symbols-outlined">send</span>
                 Enviar teste push
@@ -35,6 +45,21 @@
     <section class="settings-card">
         <p class="section-title">Feedback por vibracao</p>
         <p class="section-text">Use vibracao curta em confirmacoes, erro ou acoes importantes no celular.</p>
+
+        <button type="button"
+                class="switch-row"
+                role="switch"
+                aria-checked="@vibrationEnabled"
+                @onclick="ToggleVibrationAsync"
+                disabled="@(!deviceSupported)">
+            <span class="switch-copy">
+                <span class="switch-title">Vibracao do app</span>
+                <span class="helper-text">@GetVibrationStatusText()</span>
+            </span>
+            <span class="switch @(vibrationEnabled ? "is-on" : string.Empty)">
+                <span class="switch-thumb"></span>
+            </span>
+        </button>
 
         @if (!string.IsNullOrWhiteSpace(deviceMessage))
         {
@@ -111,6 +136,8 @@
     private bool loading;
     private int? usuarioId;
     private bool deviceSupported;
+    private bool vibrationEnabled = true;
+    private bool pushEnabled;
     private bool passkeySupported;
     private List<PasskeyCredentialDTO> credenciais = new();
 
@@ -122,25 +149,29 @@
         try
         {
             deviceSupported = await DeviceFeedbackService.IsSupportedAsync();
+            vibrationEnabled = await DeviceFeedbackService.IsEnabledAsync();
         }
         catch
         {
             deviceSupported = false;
+            vibrationEnabled = false;
         }
 
         try
         {
+            pushEnabled = await PushNotificationService.IsEnabledAsync();
             passkeySupported = await PasskeyAuthService.IsSupportedAsync();
             credenciais = await PasskeyAuthService.GetMyCredentialsAsync();
         }
         catch
         {
+            pushEnabled = false;
             passkeySupported = false;
             credenciais = new();
         }
     }
 
-    private async Task AtivarPushAsync()
+    private async Task TogglePushAsync()
     {
         if (!usuarioId.HasValue)
         {
@@ -153,8 +184,14 @@
 
         try
         {
-            var result = await PushNotificationService.SubscribeAsync(usuarioId.Value);
+            var result = pushEnabled
+                ? await PushNotificationService.DisableAsync()
+                : await PushNotificationService.SubscribeAsync(usuarioId.Value);
+
             pushMessage = result.Message;
+            pushEnabled = result.Success
+                ? !pushEnabled
+                : pushEnabled;
 
             if (result.Success)
             {
@@ -167,6 +204,25 @@
         finally
         {
             loading = false;
+        }
+    }
+
+    private async Task ToggleVibrationAsync()
+    {
+        if (!deviceSupported)
+        {
+            return;
+        }
+
+        vibrationEnabled = !vibrationEnabled;
+        await DeviceFeedbackService.SetEnabledAsync(vibrationEnabled);
+        deviceMessage = vibrationEnabled
+            ? "Vibracao ativada para este dispositivo."
+            : "Vibracao desativada para este dispositivo.";
+
+        if (vibrationEnabled)
+        {
+            await DeviceFeedbackService.VibrateSuccessAsync();
         }
     }
 
@@ -281,5 +337,24 @@
     private async Task CarregarCredenciaisAsync()
     {
         credenciais = await PasskeyAuthService.GetMyCredentialsAsync();
+    }
+
+    private string GetPushStatusText()
+    {
+        return pushEnabled
+            ? "Ligado neste dispositivo"
+            : "Desligado neste dispositivo";
+    }
+
+    private string GetVibrationStatusText()
+    {
+        if (!deviceSupported)
+        {
+            return "Seu dispositivo nao oferece suporte";
+        }
+
+        return vibrationEnabled
+            ? "Ligado neste dispositivo"
+            : "Desligado neste dispositivo";
     }
 }

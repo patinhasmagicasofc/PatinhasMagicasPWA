@@ -42,6 +42,35 @@ window.pushNotifications = {
         };
     },
 
+    async isEnabled() {
+        if (!('serviceWorker' in navigator) || !('PushManager' in window)) {
+            return false;
+        }
+
+        if (Notification.permission !== 'granted') {
+            return false;
+        }
+
+        const registration = await navigator.serviceWorker.ready;
+        const subscription = await registration.pushManager.getSubscription();
+        return !!subscription;
+    },
+
+    async unsubscribe() {
+        if (!('serviceWorker' in navigator) || !('PushManager' in window)) {
+            return false;
+        }
+
+        const registration = await navigator.serviceWorker.ready;
+        const subscription = await registration.pushManager.getSubscription();
+
+        if (!subscription) {
+            return true;
+        }
+
+        return await subscription.unsubscribe();
+    },
+
     urlBase64ToUint8Array(base64String) {
         const padding = '='.repeat((4 - (base64String.length % 4)) % 4);
         const base64 = (base64String + padding).replace(/-/g, '+').replace(/_/g, '/');
@@ -210,6 +239,8 @@ window.notificationInbox = (() => {
 })();
 
 window.deviceFeedback = {
+    storageKey: 'device-feedback-enabled',
+
     isSupported() {
         try {
             return 'vibrate' in navigator;
@@ -219,10 +250,32 @@ window.deviceFeedback = {
         }
     },
 
+    isEnabled() {
+        try {
+            const stored = localStorage.getItem(this.storageKey);
+            return stored === null ? true : stored === 'true';
+        } catch (e) {
+            console.debug('deviceFeedback.isEnabled error', e);
+            return true;
+        }
+    },
+
+    setEnabled(enabled) {
+        try {
+            localStorage.setItem(this.storageKey, enabled ? 'true' : 'false');
+        } catch (e) {
+            console.debug('deviceFeedback.setEnabled error', e);
+        }
+    },
+
     vibrate(pattern) {
         try {
             if (!('vibrate' in navigator)) {
                 console.debug('Vibrate not supported by navigator');
+                return;
+            }
+
+            if (!this.isEnabled()) {
                 return;
             }
 

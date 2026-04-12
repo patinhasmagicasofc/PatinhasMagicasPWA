@@ -31,6 +31,16 @@ namespace PatinhasMagicasPWA.Services
             return _jsRuntime.InvokeAsync<bool>("deviceFeedback.isSupported");
         }
 
+        public ValueTask<bool> IsEnabledAsync()
+        {
+            return _jsRuntime.InvokeAsync<bool>("deviceFeedback.isEnabled");
+        }
+
+        public ValueTask SetEnabledAsync(bool enabled)
+        {
+            return _jsRuntime.InvokeVoidAsync("deviceFeedback.setEnabled", enabled);
+        }
+
         private ValueTask VibrateAsync(int[] pattern)
         {
             return _jsRuntime.InvokeVoidAsync("deviceFeedback.vibrate", pattern);

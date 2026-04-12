@@ -68,5 +68,23 @@ namespace PatinhasMagicasPWA.Services
                     : "Nao foi possivel enviar a notificacao de teste."
             };
         }
+
+        public async Task<bool> IsEnabledAsync()
+        {
+            return await _jsRuntime.InvokeAsync<bool>("pushNotifications.isEnabled");
+        }
+
+        public async Task<PushNotificationResultDTO> DisableAsync()
+        {
+            var disabled = await _jsRuntime.InvokeAsync<bool>("pushNotifications.unsubscribe");
+
+            return new PushNotificationResultDTO
+            {
+                Success = disabled,
+                Message = disabled
+                    ? "Notificacoes desativadas neste dispositivo."
+                    : "Nao foi possivel desativar as notificacoes neste dispositivo."
+            };
+        }
     }
 }
