@@ -2,11 +2,34 @@
 @inject NavigationManager Navigation
 @inject JwtService JwtService
 @inject UsuarioService UsuarioService
+@inject AuthService AuthService
 
 <main>
-    @if (usuario is null)
+    @if (isLoading)
     {
-        <p>Carregando perfil...</p>
+        <section class="loading-profile-card" aria-label="Carregando perfil">
+            <div class="loading-avatar"></div>
+            <div class="loading-copy">
+                <div class="loading-line md"></div>
+                <div class="loading-line sm"></div>
+            </div>
+        </section>
+
+        <section class="loading-stack">
+            @for (var index = 0; index < 5; index++)
+            {
+                <div class="loading-card">
+                    <div class="loading-row">
+                        <div class="loading-circle"></div>
+                        <div class="loading-line full"></div>
+                    </div>
+                </div>
+            }
+        </section>
+    }
+    else if (usuario is null)
+    {
+        <p>Nao foi possivel carregar seu perfil.</p>
     }
     else
     {
@@ -53,18 +76,18 @@
             </div>
 
             <div class="menu-item">
-                <button>
+                <button @onclick="IrParaConfiguracoes">
                     <span class="material-symbols-outlined">settings</span>
                     Configuracoes
                 </button>
             </div>
+        </section>
 
-            <div class="menu-item">
-                <button @onclick="IrParaBiometria">
-                    <span class="material-symbols-outlined">fingerprint</span>
-                    Biometria e passkeys
-                </button>
-            </div>
+        <section class="profile-actions">
+            <button class="logout-button" @onclick="SairAsync">
+                <span class="material-symbols-outlined">logout</span>
+                Sair da conta
+            </button>
         </section>
     }
 </main>
@@ -73,22 +96,30 @@
 
 @code {
     private UsuarioOutputDTO? usuario;
+    private bool isLoading = true;
 
     protected override async Task OnInitializedAsync()
     {
-        var userIdString = await JwtService.GetUserIdAsync();
-
-        if (!int.TryParse(userIdString, out var userId))
+        try
         {
-            Navigation.NavigateTo("/Login", replace: true);
-            return;
+            var userIdString = await JwtService.GetUserIdAsync();
+
+            if (!int.TryParse(userIdString, out var userId))
+            {
+                Navigation.NavigateTo("/Login", replace: true);
+                return;
+            }
+
+            usuario = await UsuarioService.GetByIdAsync(userId);
+
+            if (usuario is null)
+            {
+                Navigation.NavigateTo("/Login", replace: true);
+            }
         }
-
-        usuario = await UsuarioService.GetByIdAsync(userId);
-
-        if (usuario is null)
+        finally
         {
-            Navigation.NavigateTo("/Login", replace: true);
+            isLoading = false;
         }
     }
 
@@ -102,8 +133,14 @@
         Navigation.NavigateTo("/meusanimais");
     }
 
-    private void IrParaBiometria()
+    private void IrParaConfiguracoes()
     {
-        Navigation.NavigateTo("/perfil/biometria");
+        Navigation.NavigateTo("/perfil/configuracoes");
+    }
+
+    private async Task SairAsync()
+    {
+        await AuthService.Logout();
+        Navigation.NavigateTo("/Login", replace: true);
     }
 }

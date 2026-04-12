@@ -48,7 +48,31 @@
         <img src="./img/banner-promocao-pet.jpg" alt="">
     </section>
 
-    @if (produtos.Count == 0)
+    @if (isLoading)
+    {
+        <section class="loading-stack product-loading" aria-label="Carregando produtos">
+            <div class="loading-card">
+                <div class="loading-image"></div>
+            </div>
+
+            <div class="loading-grid">
+                @for (var index = 0; index < 4; index++)
+                {
+                    <div class="loading-product-card">
+                        <div class="loading-image"></div>
+                        <div class="loading-copy">
+                            <div class="loading-line md"></div>
+                            <div class="loading-row space-between">
+                                <div class="loading-line sm"></div>
+                                <div class="loading-line sm"></div>
+                            </div>
+                        </div>
+                    </div>
+                }
+            </div>
+        </section>
+    }
+    else if (produtos.Count == 0)
     {
         <p>Não há produtos disponíveis no momento.</p>
     }
@@ -78,12 +102,7 @@
         </section>
     }
 
-  
-    @if (produtos.Count == 0)
-    {
-        <p>Não há produtos disponíveis no momento.</p>
-    }
-    else
+    @if (!isLoading && produtos.Count > 0)
     {
         <section id="card-product">
 
@@ -110,10 +129,18 @@
 
 @code {
     List<ProdutoDTO> produtos = new();
+    bool isLoading = true;
 
     protected override async Task OnInitializedAsync()
     {
-        produtos = await ProdutoService.GetAllProdutosAsync();
+        try
+        {
+            produtos = await ProdutoService.GetAllProdutosAsync();
+        }
+        finally
+        {
+            isLoading = false;
+        }
     }
 
 }

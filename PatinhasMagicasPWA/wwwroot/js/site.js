@@ -56,6 +56,159 @@ window.pushNotifications = {
     }
 };
 
+window.notificationInbox = (() => {
+    const dbName = 'patinhas-magicas-notifications';
+    const storeName = 'notifications';
+    const listeners = [];
+
+    function openDb() {
+        return new Promise((resolve, reject) => {
+            const request = indexedDB.open(dbName, 1);
+
+            request.onupgradeneeded = () => {
+                const db = request.result;
+
+                if (!db.objectStoreNames.contains(storeName)) {
+                    db.createObjectStore(storeName, { keyPath: 'id' });
+                }
+            };
+
+            request.onsuccess = () => resolve(request.result);
+            request.onerror = () => reject(request.error);
+        });
+    }
+
+    async function getAll() {
+        const db = await openDb();
+
+        return new Promise((resolve, reject) => {
+            const transaction = db.transaction(storeName, 'readonly');
+            const store = transaction.objectStore(storeName);
+            const request = store.getAll();
+
+            request.onsuccess = () => {
+                const items = (request.result || [])
+                    .sort((left, right) => new Date(right.receivedAtUtc) - new Date(left.receivedAtUtc));
+
+                db.close();
+                resolve(items);
+            };
+
+            request.onerror = () => {
+                db.close();
+                reject(request.error);
+            };
+        });
+    }
+
+    async function save(item) {
+        const db = await openDb();
+
+        return new Promise((resolve, reject) => {
+            const transaction = db.transaction(storeName, 'readwrite');
+            transaction.objectStore(storeName).put(item);
+
+            transaction.oncomplete = async () => {
+                db.close();
+                await notifyListeners();
+                resolve();
+            };
+
+            transaction.onerror = () => {
+                db.close();
+                reject(transaction.error);
+            };
+        });
+    }
+
+    async function markAsRead(id) {
+        const db = await openDb();
+
+        return new Promise((resolve, reject) => {
+            const transaction = db.transaction(storeName, 'readwrite');
+            const store = transaction.objectStore(storeName);
+            const request = store.get(id);
+
+            request.onsuccess = () => {
+                const item = request.result;
+
+                if (item) {
+                    item.isRead = true;
+                    store.put(item);
+                }
+            };
+
+            transaction.oncomplete = async () => {
+                db.close();
+                await notifyListeners();
+                resolve();
+            };
+
+            transaction.onerror = () => {
+                db.close();
+                reject(transaction.error);
+            };
+        });
+    }
+
+    async function markAllAsRead() {
+        const items = await getAll();
+
+        for (const item of items) {
+            if (!item.isRead) {
+                await markAsRead(item.id);
+            }
+        }
+
+        await notifyListeners();
+    }
+
+    async function getUnreadCount() {
+        const items = await getAll();
+        return items.filter(item => !item.isRead).length;
+    }
+
+    async function notifyListeners() {
+        const activeListeners = [...listeners];
+
+        for (const listener of activeListeners) {
+            try {
+                await listener.invokeMethodAsync('HandleNotificationInboxChanged');
+            } catch (error) {
+                const index = listeners.indexOf(listener);
+                if (index >= 0) {
+                    listeners.splice(index, 1);
+                }
+            }
+        }
+    }
+
+    if ('serviceWorker' in navigator) {
+        navigator.serviceWorker.addEventListener('message', event => {
+            if (event.data?.type === 'notification-inbox-changed') {
+                notifyListeners();
+            }
+        });
+    }
+
+    return {
+        getAll,
+        getUnreadCount,
+        save,
+        markAsRead,
+        markAllAsRead,
+        registerListener(dotNetRef) {
+            listeners.push(dotNetRef);
+        },
+        unregisterListener(dotNetRef) {
+            const index = listeners.indexOf(dotNetRef);
+            if (index >= 0) {
+                listeners.splice(index, 1);
+            }
+        }
+    };
+})();
+
 window.deviceFeedback = {
     isSupported() {
         try {

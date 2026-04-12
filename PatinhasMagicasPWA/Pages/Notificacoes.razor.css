@@ -6,15 +6,21 @@ main {
     flex-direction: column;
     gap: 1em;
 
-    .notification-hero,
-    .notification-card {
+    .notifications-hero,
+    .notifications-toolbar,
+    .notifications-empty,
+    .notification-item {
         background: var(--clr-white);
         border-radius: 1.5em;
         box-shadow: var(--shadow-soft);
     }
 
-    .notification-hero {
+    .notifications-hero {
         padding: 1.4em;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 1em;
 
         .title {
             color: var(--clr-primary-dark);
@@ -26,49 +32,115 @@ main {
             color: var(--clr-text-muted);
             margin-top: .5em;
         }
-    }
 
-    .notification-card {
-        padding: 1.2em;
-        display: flex;
-        flex-direction: column;
-        gap: .9em;
-
-        .section-title {
-            color: var(--clr-primary-dark);
+        .counter {
+            min-width: 2.25rem;
+            height: 2.25rem;
+            padding: 0 .6rem;
+            border-radius: 999px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            background: var(--clr-primary);
+            color: var(--clr-white);
             font-weight: var(--fw-sub);
         }
+    }
 
-        .section-text,
-        .feedback {
-            color: var(--clr-text-main);
-        }
+    .notifications-toolbar {
+        padding: 1em 1.2em;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 1em;
 
-        .button-group {
-            display: flex;
-            flex-direction: column;
-            gap: .75em;
+        p {
+            color: var(--clr-text-muted);
         }
 
         button {
-            width: 100%;
             border: none;
-            border-radius: 1em;
-            padding: 1em;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: .7em;
-        }
-
-        .primary {
-            background: var(--clr-primary);
-            color: var(--clr-white);
-        }
-
-        .secondary {
-            background: var(--clr-primary-soft-one);
+            background: var(--clr-primary-soft);
             color: var(--clr-primary-dark);
+            border-radius: 999px;
+            padding: .75em 1em;
         }
+    }
+
+    .notifications-empty {
+        padding: 2em 1.4em;
+        text-align: center;
+        color: var(--clr-text-muted);
+        display: flex;
+        flex-direction: column;
+        gap: .75em;
+        align-items: center;
+
+        span {
+            font-size: 2.5rem;
+            color: var(--clr-primary-light);
+        }
+    }
+
+    .notifications-list {
+        display: flex;
+        flex-direction: column;
+        gap: .85em;
+    }
+
+    .notification-item {
+        width: 100%;
+        border: none;
+        padding: 1.1em;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 1em;
+        text-align: left;
+    }
+
+    .notification-item.is-unread {
+        border: 1px solid var(--clr-primary-light);
+        background: linear-gradient(180deg, var(--clr-white), var(--clr-primary-soft-one));
+    }
+
+    .notification-copy {
+        display: flex;
+        flex-direction: column;
+        gap: .45em;
+    }
+
+    .notification-header {
+        display: flex;
+        align-items: center;
+        gap: .6em;
+    }
+
+    .notification-title {
+        color: var(--clr-text-main);
+        font-weight: var(--fw-sub);
+    }
+
+    .notification-body,
+    .notification-date {
+        color: var(--clr-text-muted);
+    }
+
+    .notification-date {
+        font-size: .9rem;
+    }
+
+    .unread-dot {
+        width: .65rem;
+        height: .65rem;
+        border-radius: 999px;
+        background: var(--clr-primary);
+        flex-shrink: 0;
+    }
+
+    .notification-item > span {
+        color: var(--clr-primary);
+        font-size: 1.8rem;
+        flex-shrink: 0;
     }
 }

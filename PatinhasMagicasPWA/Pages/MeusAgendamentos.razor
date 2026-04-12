@@ -8,7 +8,28 @@
         <button @onclick="Agendar">Agendar agora</button>
     </div>
 
-    @if (agendamentos.Count == 0)
+    @if (isLoading)
+    {
+        <section class="loading-stack" aria-label="Carregando agendamentos">
+            @for (var index = 0; index < 3; index++)
+            {
+                <div class="loading-card">
+                    <div class="loading-row">
+                        <div class="loading-circle"></div>
+                        <div class="loading-copy">
+                            <div class="loading-row space-between">
+                                <div class="loading-line md"></div>
+                                <div class="loading-pill"></div>
+                            </div>
+                            <div class="loading-line lg"></div>
+                            <div class="loading-line sm"></div>
+                        </div>
+                    </div>
+                </div>
+            }
+        </section>
+    }
+    else if (agendamentos.Count == 0)
     {
         <div class="info-bg-service">
             <ul>
@@ -76,10 +97,18 @@
 @code {
 
     List<AgendamentoDTO> agendamentos = new();
+    bool isLoading = true;
 
     protected override async Task OnInitializedAsync()
     {
-        agendamentos = await AgendamentoService.GetAll() ?? new List<AgendamentoDTO>();
+        try
+        {
+            agendamentos = await AgendamentoService.GetAll() ?? new List<AgendamentoDTO>();
+        }
+        finally
+        {
+            isLoading = false;
+        }
     }
 
     private void VerDetalhes(int id)

@@ -1,8 +1,10 @@
-﻿@page "/CadastroAnimal"
+@page "/CadastroAnimal"
 @inject NavigationManager Navigation
 @inject AnimalService AnimalService
 @inject EspecieService EspecieService
 @inject TamanhoAnimalService TamanhoAnimalService
+@inject DeviceFeedbackService DeviceFeedbackService
+
 <main class="cadastro-animal-page" id="cadastro-animal">
     <EditForm class="card-form"
               Model="@animal"
@@ -13,23 +15,38 @@
                 <p class="title">Cadastro de Animal</p>
             </li>
         </ul>
+
         <div class="photo-card">
             <p class="label">Foto do animal</p>
-            <img class="animal-photo-preview"
-                 src="caminho-da-imagem.jpg"
-                 alt="Foto do animal" />
-            <div class="animal-photo-placeholder">
-                <span class="material-symbols-outlined">pets</span>
-                <p>Nenhuma foto cadastrada.</p>
-            </div>
+
+            @if (!string.IsNullOrWhiteSpace(animal.FotoDataUrl))
+            {
+                <img class="animal-photo-preview"
+                     src="@animal.FotoDataUrl"
+                     alt="Foto do animal" />
+            }
+            else
+            {
+                <div class="animal-photo-placeholder">
+                    <span class="material-symbols-outlined">pets</span>
+                    <p>Nenhuma foto cadastrada.</p>
+                </div>
+            }
+
             <p class="photo-note">A foto é opcional. Se quiser, você pode cadastrar ou trocar depois.</p>
-            <input type="file"
-                   accept="image/*"
-                   class="photo-input" />
-            <button type="button" class="photo-remove">
-                Remover foto
-            </button>
+
+            <InputFile OnChange="SelecionarFotoAsync"
+                       accept="image/*"
+                       class="photo-input" />
+
+            @if (!string.IsNullOrWhiteSpace(animal.FotoDataUrl))
+            {
+                <button type="button" class="photo-remove" @onclick="RemoverFotoAsync">
+                    Remover foto
+                </button>
+            }
         </div>
+
         <div class="field">
             <ul>
                 <li>
@@ -42,6 +59,7 @@
                 </li>
             </ul>
         </div>
+
         <div class="field">
             <ul>
                 <li>
@@ -68,6 +86,7 @@
                 </li>
             </ul>
         </div>
+
         <div class="field">
             <ul>
                 <li>
@@ -79,6 +98,7 @@
                 </li>
             </ul>
         </div>
+
         <div class="field">
             <ul>
                 <li>
@@ -91,6 +111,7 @@
                 </li>
             </ul>
         </div>
+
         <div class="field">
             <ul>
                 <li>
@@ -117,6 +138,7 @@
                 </li>
             </ul>
         </div>
+
         <div class="actions">
             <button type="button" class="cancel" @onclick="Voltar">
                 Cancelar cadastro
@@ -130,22 +152,42 @@
 
 @code
 {
-    AnimalDTO animal = new();
-
-    List<TamanhoAnimalDTO> tamanhoAnimals = new();
-
-    List<EspecieOutputDTO> especies = new();
+    private AnimalDTO animal = new();
+    private List<TamanhoAnimalDTO> tamanhoAnimals = new();
+    private List<EspecieOutputDTO> especies = new();
 
     protected override async Task OnInitializedAsync()
     {
         tamanhoAnimals = await TamanhoAnimalService.GetAllAsync();
-
         especies = await EspecieService.GetAllAsync();
     }
 
     private void Voltar()
     {
         Navigation.NavigateTo("/home");
+    }
+
+    private async Task SelecionarFotoAsync(InputFileChangeEventArgs args)
+    {
+        if (args.FileCount == 0)
+        {
+            return;
+        }
+
+        var file = args.File;
+        await using var fileStream = file.OpenReadStream(5 * 1024 * 1024);
+        using var memoryStream = new MemoryStream();
+        await fileStream.CopyToAsync(memoryStream);
+
+        var imageBytes = memoryStream.ToArray();
+        animal.FotoDataUrl = $"data:{file.ContentType};base64,{Convert.ToBase64String(imageBytes)}";
+        await DeviceFeedbackService.VibrateSelectionAsync();
+    }
+
+    private async Task RemoverFotoAsync()
+    {
+        animal.FotoDataUrl = null;
+        await DeviceFeedbackService.VibrateWarningAsync();
     }
 
     private async Task Cadastrar()

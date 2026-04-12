@@ -1,4 +1,6 @@
-﻿@page "/MenuInferior"
+@page "/MenuInferior"
+@implements IAsyncDisposable
+@inject NotificationInboxService NotificationInboxService
 
 <nav class="menu-inferior">
     <NavLink href="/home" class="menu-item">
@@ -16,15 +18,53 @@
         <span class="menu-texto">Serviços</span>
     </NavLink>
 
-    <NavLink href="/notificacoes" class="menu-item">
-        <span class="material-symbols-outlined">
-            notifications
+    <NavLink href="/notificacoes" class="menu-item notification-link">
+        <span class="icon-wrap">
+            <span class="material-symbols-outlined">notifications</span>
+            @if (unreadCount > 0)
+            {
+                <span class="notification-badge">@unreadCount</span>
+            }
         </span>
         <span class="menu-texto">Notificações</span>
     </NavLink>
 
     <NavLink href="/perfil" class="menu-item">
-        <span class="material-symbols-outlined">Person</span>
+        <span class="material-symbols-outlined">person</span>
         <span class="menu-texto">Perfil</span>
     </NavLink>
 </nav>
+
+@code {
+    private int unreadCount;
+    private DotNetObjectReference<MenuInferior>? dotNetRef;
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (!firstRender)
+        {
+            return;
+        }
+
+        dotNetRef = DotNetObjectReference.Create(this);
+        await NotificationInboxService.RegisterListenerAsync(dotNetRef);
+        unreadCount = await NotificationInboxService.GetUnreadCountAsync();
+        await InvokeAsync(StateHasChanged);
+    }
+
+    [JSInvokable]
+    public async Task HandleNotificationInboxChanged()
+    {
+        unreadCount = await NotificationInboxService.GetUnreadCountAsync();
+        await InvokeAsync(StateHasChanged);
+    }
+
+    public async ValueTask DisposeAsync()
+    {
+        if (dotNetRef is not null)
+        {
+            await NotificationInboxService.UnregisterListenerAsync(dotNetRef);
+            dotNetRef.Dispose();
+        }
+    }
+}

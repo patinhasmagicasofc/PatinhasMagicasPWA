@@ -1,171 +1,123 @@
 @page "/notificacoes"
-@inject JwtService JwtService
-@inject PushNotificationService PushNotificationService
-@inject DeviceFeedbackService DeviceFeedbackService
+@implements IAsyncDisposable
+@inject NavigationManager Navigation
+@inject NotificationInboxService NotificationInboxService
 
 <main>
-    <section class="notification-hero">
-        <p class="title">Notificações</p>
-        <p class="subtitle">Gerencie push e recursos do dispositivo em um único lugar.</p>
-    </section>
-
-    <section class="notification-card">
-        <p class="section-title">Push</p>
-        <p class="section-text">Ative para receber confirmações de agendamento e avisos importantes.</p>
-
-        @if (!string.IsNullOrWhiteSpace(pushMessage))
-        {
-            <p class="feedback">@pushMessage</p>
-        }
-
-        <button class="primary" @onclick="AtivarPushAsync" disabled="@loading">
-            <span class="material-symbols-outlined">notifications_active</span>
-            Ativar notificações
-        </button>
-
-        <button class="secondary" @onclick="EnviarTestePushAsync" disabled="@loading">
-            <span class="material-symbols-outlined">send</span>
-            Enviar teste push
-        </button>
-    </section>
-
-    <section class="notification-card">
-        <p class="section-title">Vibração</p>
-        <p class="section-text">Use vibração curta em confirmações, aviso de erro ou feedback de ação no celular.</p>
-
-        @if (!string.IsNullOrWhiteSpace(deviceMessage))
-        {
-            <p class="feedback">@deviceMessage</p>
-        }
-
-        <div class="button-group">
-            <button class="primary" @onclick="TestarVibracaoSucessoAsync" disabled="@(!deviceSupported)">
-                <span class="material-symbols-outlined">done_all</span>
-                Testar sucesso
-            </button>
-
-            <button class="secondary" @onclick="TestarVibracaoAvisoAsync" disabled="@(!deviceSupported)">
-                <span class="material-symbols-outlined">warning</span>
-                Testar aviso
-            </button>
+    <section class="notifications-hero">
+        <div>
+            <p class="title">Notificacoes</p>
+            <p class="subtitle">Acompanhe seus avisos de agendamento e lembretes importantes.</p>
         </div>
 
-        <p class="helper-text">Vibração disponível: @(deviceSupported ? "Sim" : "Não")</p>
+        @if (unreadCount > 0)
+        {
+            <span class="counter">@unreadCount</span>
+        }
     </section>
 
-    <section class="notification-card">
-        <p class="section-title">Sugestão</p>
-        <p class="section-text">Vale usar vibração em eventos curtos, como salvar foto do animal, confirmar agendamento ou falha importante. Evite vibrar em toda navegação para não cansar o usuário.</p>
+    <section class="notifications-toolbar">
+        <p>@(notifications.Count == 0 ? "Nenhuma notificacao por aqui." : $"{notifications.Count} notificacao(oes) recebida(s).")</p>
+
+        @if (unreadCount > 0)
+        {
+            <button @onclick="MarcarTodasComoLidasAsync">Marcar tudo como lido</button>
+        }
     </section>
+
+    @if (notifications.Count == 0)
+    {
+        <section class="notifications-empty">
+            <span class="material-symbols-outlined">notifications_off</span>
+            <p>Quando chegar uma notificacao de agendamento, ela vai aparecer aqui.</p>
+        </section>
+    }
+    else
+    {
+        <section class="notifications-list">
+            @foreach (var notification in notifications)
+            {
+                <button class="notification-item @(notification.IsRead ? string.Empty : "is-unread")"
+                        @onclick="() => AbrirNotificacaoAsync(notification)">
+                    <div class="notification-copy">
+                        <div class="notification-header">
+                            <p class="notification-title">@notification.Title</p>
+                            @if (!notification.IsRead)
+                            {
+                                <span class="unread-dot"></span>
+                            }
+                        </div>
+
+                        <p class="notification-body">@notification.Body</p>
+                        <p class="notification-date">@notification.ReceivedAtUtc.ToLocalTime().ToString("dd/MM/yyyy HH:mm")</p>
+                    </div>
+
+                    <span class="material-symbols-outlined">chevron_right</span>
+                </button>
+            }
+        </section>
+    }
 </main>
 
 <MenuInferior />
 
 @code {
-    private string pushMessage = string.Empty;
-    private string deviceMessage = string.Empty;
-    private bool loading;
-    private int? usuarioId;
-    private bool deviceSupported;
+    private List<NotificationInboxItemDTO> notifications = new();
+    private int unreadCount;
+    private DotNetObjectReference<Notificacoes>? dotNetRef;
 
-    protected override async Task OnInitializedAsync()
+    protected override async Task OnAfterRenderAsync(bool firstRender)
     {
-        var userIdString = await JwtService.GetUserIdAsync();
-        usuarioId = int.TryParse(userIdString, out var userId) ? userId : null;
-
-        try
+        if (!firstRender)
         {
-            deviceSupported = await DeviceFeedbackService.IsSupportedAsync();
-        }
-        catch
-        {
-            deviceSupported = false;
-        }
-    }
-
-    private async Task AtivarPushAsync()
-    {
-        if (!usuarioId.HasValue)
-        {
-            pushMessage = "Usuário não identificado.";
-            await DeviceFeedbackService.VibrateWarningAsync();
             return;
         }
 
-        loading = true;
+        dotNetRef = DotNetObjectReference.Create(this);
+        await NotificationInboxService.RegisterListenerAsync(dotNetRef);
+        await LoadNotificationsAsync();
+        await InvokeAsync(StateHasChanged);
+    }
 
-        try
+    [JSInvokable]
+    public async Task HandleNotificationInboxChanged()
+    {
+        await LoadNotificationsAsync();
+        await InvokeAsync(StateHasChanged);
+    }
+
+    private async Task LoadNotificationsAsync()
+    {
+        notifications = await NotificationInboxService.GetAllAsync();
+        unreadCount = await NotificationInboxService.GetUnreadCountAsync();
+    }
+
+    private async Task MarcarTodasComoLidasAsync()
+    {
+        await NotificationInboxService.MarkAllAsReadAsync();
+        await LoadNotificationsAsync();
+    }
+
+    private async Task AbrirNotificacaoAsync(NotificationInboxItemDTO notification)
+    {
+        if (!notification.IsRead)
         {
-            var result = await PushNotificationService.SubscribeAsync(usuarioId.Value);
-            pushMessage = result.Message;
-
-            if (result.Success)
-            {
-                await DeviceFeedbackService.VibrateSuccessAsync();
-                return;
-            }
-
-            await DeviceFeedbackService.VibrateWarningAsync();
+            await NotificationInboxService.MarkAsReadAsync(notification.Id);
+            await LoadNotificationsAsync();
         }
-        finally
+
+        if (!string.IsNullOrWhiteSpace(notification.Url))
         {
-            loading = false;
+            Navigation.NavigateTo(notification.Url);
         }
     }
 
-    private async Task EnviarTestePushAsync()
+    public async ValueTask DisposeAsync()
     {
-        if (!usuarioId.HasValue)
+        if (dotNetRef is not null)
         {
-            pushMessage = "Usuário não identificado.";
-            await DeviceFeedbackService.VibrateWarningAsync();
-            return;
-        }
-
-        loading = true;
-
-        try
-        {
-            var result = await PushNotificationService.SendTestAsync(usuarioId.Value);
-            pushMessage = result.Message;
-
-            if (result.Success)
-            {
-                await DeviceFeedbackService.VibrateSuccessAsync();
-                return;
-            }
-
-            await DeviceFeedbackService.VibrateWarningAsync();
-        }
-        finally
-        {
-            loading = false;
-        }
-    }
-
-    private async Task TestarVibracaoSucessoAsync()
-    {
-        var supported = await DeviceFeedbackService.IsSupportedAsync();
-        deviceMessage = supported
-            ? "Feedback de sucesso disparado."
-            : "Seu dispositivo ou navegador não oferece suporte a vibração.";
-
-        if (supported)
-        {
-            await DeviceFeedbackService.VibrateSuccessAsync();
-        }
-    }
-
-    private async Task TestarVibracaoAvisoAsync()
-    {
-        var supported = await DeviceFeedbackService.IsSupportedAsync();
-        deviceMessage = supported
-            ? "Feedback de aviso disparado."
-            : "Seu dispositivo ou navegador não oferece suporte a vibração.";
-
-        if (supported)
-        {
-            await DeviceFeedbackService.VibrateWarningAsync();
+            await NotificationInboxService.UnregisterListenerAsync(dotNetRef);
+            dotNetRef.Dispose();
         }
     }
 }

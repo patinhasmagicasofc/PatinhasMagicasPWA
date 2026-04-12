@@ -8,7 +8,28 @@
         <button @onclick="CadastrarAnimal">Cadastrar animal</button>
     </div>
 
-    @if (animals.Count == 0)
+    @if (isLoading)
+    {
+        <section class="loading-stack" aria-label="Carregando animais">
+            @for (var index = 0; index < 3; index++)
+            {
+                <div class="loading-card">
+                    <div class="loading-row space-between">
+                        <div class="loading-row">
+                            <div class="loading-circle"></div>
+                            <div class="loading-copy">
+                                <div class="loading-line md"></div>
+                                <div class="loading-line sm"></div>
+                                <div class="loading-line sm"></div>
+                            </div>
+                        </div>
+                        <div class="loading-pill"></div>
+                    </div>
+                </div>
+            }
+        </section>
+    }
+    else if (animals.Count == 0)
     {
         <p>Você ainda não tem animais cadastrados.</p>
     }
@@ -40,19 +61,29 @@
 
 @code {
     List<AnimalDTO> animals = new();
+    bool isLoading = true;
 
     protected override async Task OnInitializedAsync()
     {
-        animals = await AnimalService.GetAllAnimalsAsync();
+        try
+        {
+            animals = await AnimalService.GetAllAnimalsAsync();
+        }
+        finally
+        {
+            isLoading = false;
+        }
     }
 
-    private async Task VerDetalhes(int id)
+    private Task VerDetalhes(int id)
     {
         Navigation.NavigateTo($"/animal/{id}");
+        return Task.CompletedTask;
     }
 
-    private async Task CadastrarAnimal()
+    private Task CadastrarAnimal()
     {
         Navigation.NavigateTo("/CadastroAnimal");
+        return Task.CompletedTask;
     }
 }

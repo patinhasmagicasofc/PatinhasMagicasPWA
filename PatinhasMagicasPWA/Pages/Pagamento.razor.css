@@ -1,16 +1,42 @@
-﻿main {
+main {
     min-height: 100vh;
     padding-top: 5em;
     padding-bottom: 4em;
     margin: 0 1em;
-    display: flex;
-    flex-direction: column;
-    gap: 1em;
 
-    p:nth-child(1) {
+    form {
+        display: flex;
+        flex-direction: column;
+        gap: 1em;
+    }
+
+    > form > p {
         color: var(--clr-primary-dark);
         font-size: var(--fs-sub);
         margin-bottom: 0.5em !important;
+    }
+
+    .resumo-agendamento {
+        background: var(--clr-white);
+        border-radius: 1.5em;
+        box-shadow: var(--shadow-soft);
+        padding: 1.2em;
+        display: flex;
+        flex-direction: column;
+        gap: 0.6em;
+
+        h4 {
+            color: var(--clr-primary-dark);
+            font-size: var(--fs-sub);
+            margin: 0;
+        }
+
+        p,
+        span,
+        strong {
+            color: var(--clr-text-main);
+            font-size: var(--fs-normal);
+        }
     }
 
     .input-select {
@@ -35,52 +61,52 @@
 
     .payment-box {
         box-shadow: var(--shadow-soft);
-        padding: 1em;
-        border-radius: 2em;
+        padding: 1.2em;
+        border-radius: 1.5em;
         background-color: var(--clr-white);
-
-        form {
-            display: flex;
-            flex-direction: column;
-            gap: 1.5em;
-
-            p {
-                color: var(--clr-primary-dark);
-            }
-
-            input {
-                width: 100%;
-                border-radius: 2em;
-                background: var(--clr-primary-soft-one);
-                border: 1px solid var(--clr-primary-light);
-                padding: 0.9em;
-                border-radius: 2em;
-                color: var(--clr-text-main);
-            }
-
-            .bass-line {
-                display: flex;
-                gap: 1em;
-
-                input {
-                    text-align: center;
-                }
-
-                    input:nth-child(2) {
-                        max-width: 120px;
-                    }
-            }
-        }
+        display: flex;
+        flex-direction: column;
+        gap: 1em;
+        border: 1px solid var(--clr-primary-soft);
 
         p {
+            color: var(--clr-primary-dark);
+            font-weight: var(--fw-sub);
+        }
+
+        input {
+            width: 100%;
+            border-radius: 2em;
+            background: var(--clr-primary-soft-one);
+            border: 1px solid var(--clr-primary-light);
+            padding: 0.9em;
             color: var(--clr-text-main);
+            outline: none;
+        }
+
+        input:focus {
+            border-color: var(--clr-primary);
+            box-shadow: 0 0 0 2px var(--clr-primary-transparent);
+        }
+
+        .bass-line {
+            display: flex;
+            gap: 0.8em;
+
+            input {
+                text-align: center;
+            }
+
+            input:nth-child(2) {
+                max-width: 120px;
+            }
         }
 
         button {
             padding: 1em;
             border-radius: 2em;
             border: none;
-            background-color: var(--clr-primary-dark);
+            background: linear-gradient(135deg, var(--clr-primary), var(--clr-primary-light));
             color: var(--clr-white);
         }
     }
@@ -93,15 +119,15 @@
         align-items: center;
         padding-bottom: 2em;
 
-
-            p:nth-child(2) {
-                color: var(--clr-primary-dark);
-                word-break: break-word;
-                overflow-wrap: break-word;
-                padding: .5em !important;
-                border: 1px solid var(--clr-accent-blue);
-                border-radius: 2em;
-            }
+        p:nth-child(2) {
+            color: var(--clr-primary-dark);
+            word-break: break-word;
+            overflow-wrap: break-word;
+            padding: .75em !important;
+            border: 1px solid var(--clr-accent-blue);
+            border-radius: 1em;
+            background: var(--clr-accent-blue-soft);
+        }
 
         img {
             max-width: 200px;

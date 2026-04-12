@@ -21,9 +21,18 @@
                     <li>
                         <InputSelect @bind-Value="selectedAnimalId"
                                      class="input-select"
+                                     disabled="@isLoadingAnimals"
                                      required>
                             <option value="">Selecione um animal</option>
-                            @if (animals.Count == 0)
+                            @if (isLoadingAnimals)
+                            {
+                                <option disabled>Carregando animais...</option>
+                            }
+                            else if (!string.IsNullOrWhiteSpace(loadAnimalsError))
+                            {
+                                <option disabled>@loadAnimalsError</option>
+                            }
+                            else if (animals.Count == 0)
                             {
                                 <option disabled>Não há animais cadastrados</option>
                             }
@@ -107,8 +116,10 @@
 
 @code {
     AgendamentoFluxoDTO agendamento = new();
-    List<AnimalDTO> animals = new();
+    List<AnimalSelectOptionDTO> animals = new();
     List<ServicoOutputDTO> servicos = new();
+    bool isLoadingAnimals = true;
+    string? loadAnimalsError;
 
     private int? _selectedAnimalId;
     private int? _selectedServicoId;
@@ -137,23 +148,49 @@
         }
     }
 
-    protected override async Task OnInitializedAsync()
+    protected override void OnInitialized()
     {
-        animals = await AnimalService.GetAllAnimalsAsync();
-        // inicializa sem animal selecionado para forçar a escolha do usuário
         selectedAnimalId = null;
         selectedServicoId = null;
         servicos.Clear();
+        _ = LoadAnimalsAsync();
+    }
 
-        if (animals == null || animals.Count == 0)
+    private async Task LoadAnimalsAsync()
+    {
+        var cachedAnimals = await AnimalService.GetCachedAnimalOptionsAsync();
+        if (cachedAnimals.Count > 0)
         {
-            // sem animais, não há serviços a mostrar
-            servicos = new();
+            animals = cachedAnimals;
+            isLoadingAnimals = false;
+            await InvokeAsync(StateHasChanged);
+        }
+
+        try
+        {
+            isLoadingAnimals = true;
+            loadAnimalsError = null;
+            animals = await AnimalService.GetAnimalOptionsAsync(forceRefresh: cachedAnimals.Count > 0);
+        }
+        catch
+        {
+            animals = new();
+            loadAnimalsError = "Erro ao carregar animais";
+        }
+        finally
+        {
+            isLoadingAnimals = false;
+            await InvokeAsync(StateHasChanged);
         }
     }
 
     private async Task OnAnimalChangedAsync()
     {
+        if (isLoadingAnimals)
+        {
+            return;
+        }
+
         // tenta obter os serviços já com o preço de acordo com o porte/id do animal
         if (selectedAnimalId > 0)
         {

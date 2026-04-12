@@ -37,6 +37,7 @@ builder.Services.AddScoped<EspecieService>();
 builder.Services.AddScoped<EnderecoService>();
 builder.Services.AddScoped<CepService>();
 builder.Services.AddScoped<PushNotificationService>();
+builder.Services.AddScoped<NotificationInboxService>();
 builder.Services.AddScoped<DeviceFeedbackService>();
 builder.Services.AddScoped<TipoPagamentoService>();
 builder.Services.AddScoped<PasskeyAuthService>();

@@ -1,0 +1,109 @@
+main {
+    min-height: 100vh;
+    padding: 5em 1em 5.5em;
+    background: var(--clr-primary-soft-one);
+    display: flex;
+    flex-direction: column;
+    gap: 1em;
+
+    .settings-hero,
+    .settings-card {
+        background: var(--clr-white);
+        border-radius: 1.5em;
+        box-shadow: var(--shadow-soft);
+    }
+
+    .settings-hero {
+        padding: 1.4em;
+
+        .title {
+            color: var(--clr-primary-dark);
+            font-size: var(--fs-sub-title);
+            font-weight: var(--fw-sub);
+        }
+
+        .subtitle {
+            color: var(--clr-text-muted);
+            margin-top: .5em;
+        }
+    }
+
+    .settings-card {
+        padding: 1.2em;
+        display: flex;
+        flex-direction: column;
+        gap: .9em;
+
+        .section-title {
+            color: var(--clr-primary-dark);
+            font-weight: var(--fw-sub);
+        }
+
+        .section-text,
+        .feedback,
+        .helper-text {
+            color: var(--clr-text-main);
+        }
+
+        .helper-text {
+            font-size: .9rem;
+            color: var(--clr-text-muted);
+        }
+
+        .button-group,
+        .credential-list {
+            display: flex;
+            flex-direction: column;
+            gap: .75em;
+        }
+
+        .button-group {
+            padding-top: .25em;
+        }
+
+        .credential-list {
+            padding-top: .5em;
+            border-top: 1px solid var(--clr-primary-soft-one);
+        }
+
+        .credential-item {
+            display: flex;
+            flex-direction: column;
+            gap: .75em;
+            padding: .9em 0;
+            border-bottom: 1px solid var(--clr-primary-soft-one);
+        }
+
+        .credential-item:last-child {
+            border-bottom: none;
+            padding-bottom: 0;
+        }
+
+        .credential-copy {
+            display: flex;
+            flex-direction: column;
+            gap: .3em;
+        }
+
+        button {
+            width: 100%;
+            border: none;
+            border-radius: 1em;
+            padding: 1em;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: .7em;
+        }
+
+        .primary {
+            background: var(--clr-primary);
+            color: var(--clr-white);
+        }
+
+        .secondary {
+            background: var(--clr-primary-soft-one);
+            color: var(--clr-primary-dark);
+        }
+    }
+}

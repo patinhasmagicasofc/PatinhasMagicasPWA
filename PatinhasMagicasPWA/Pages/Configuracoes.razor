@@ -1,0 +1,285 @@
+@page "/perfil/configuracoes"
+@inject JwtService JwtService
+@inject PushNotificationService PushNotificationService
+@inject DeviceFeedbackService DeviceFeedbackService
+@inject PasskeyAuthService PasskeyAuthService
+
+<main>
+    <section class="settings-hero">
+        <p class="title">Configuracoes</p>
+        <p class="subtitle">Centralize avisos, acessos do dispositivo e seguranca da conta em um unico lugar.</p>
+    </section>
+
+    <section class="settings-card">
+        <p class="section-title">Notificacoes push</p>
+        <p class="section-text">Ative para receber confirmacoes de agendamento e avisos importantes.</p>
+
+        @if (!string.IsNullOrWhiteSpace(pushMessage))
+        {
+            <p class="feedback">@pushMessage</p>
+        }
+
+        <div class="button-group">
+            <button class="primary" @onclick="AtivarPushAsync" disabled="@loading">
+                <span class="material-symbols-outlined">notifications_active</span>
+                Ativar notificacoes
+            </button>
+
+            <button class="secondary" @onclick="EnviarTestePushAsync" disabled="@loading">
+                <span class="material-symbols-outlined">send</span>
+                Enviar teste push
+            </button>
+        </div>
+    </section>
+
+    <section class="settings-card">
+        <p class="section-title">Feedback por vibracao</p>
+        <p class="section-text">Use vibracao curta em confirmacoes, erro ou acoes importantes no celular.</p>
+
+        @if (!string.IsNullOrWhiteSpace(deviceMessage))
+        {
+            <p class="feedback">@deviceMessage</p>
+        }
+
+        <div class="button-group">
+            <button class="primary" @onclick="TestarVibracaoSucessoAsync" disabled="@(!deviceSupported)">
+                <span class="material-symbols-outlined">done_all</span>
+                Testar sucesso
+            </button>
+
+            <button class="secondary" @onclick="TestarVibracaoAvisoAsync" disabled="@(!deviceSupported)">
+                <span class="material-symbols-outlined">warning</span>
+                Testar aviso
+            </button>
+        </div>
+
+        <p class="helper-text">Vibracao disponivel: @(deviceSupported ? "Sim" : "Nao")</p>
+    </section>
+
+    <section class="settings-card">
+        <p class="section-title">Biometria e passkeys</p>
+        <p class="section-text">Cadastre uma passkey para entrar com digital, rosto ou PIN do dispositivo.</p>
+        <p class="helper-text">Suporte no navegador: @(passkeySupported ? "Sim" : "Nao")</p>
+
+        @if (!string.IsNullOrWhiteSpace(passkeyMessage))
+        {
+            <p class="feedback">@passkeyMessage</p>
+        }
+
+        <div class="button-group">
+            <button class="primary" @onclick="CadastrarBiometriaAsync" disabled="@(!passkeySupported || loading)">
+                <span class="material-symbols-outlined">fingerprint</span>
+                @(loading ? "Abrindo biometria..." : "Cadastrar neste dispositivo")
+            </button>
+        </div>
+
+        <div class="credential-list">
+            @if (credenciais.Count == 0)
+            {
+                <p class="section-text">Nenhuma biometria cadastrada ainda.</p>
+            }
+            else
+            {
+                @foreach (var credencial in credenciais)
+                {
+                    <div class="credential-item">
+                        <div class="credential-copy">
+                            <p class="section-text">@credencial.FriendlyName</p>
+                            <p class="helper-text">Criado em @credencial.CreatedAt.ToLocalTime().ToString("dd/MM/yyyy HH:mm")</p>
+                            @if (credencial.LastUsedAt.HasValue)
+                            {
+                                <p class="helper-text">Ultimo uso em @credencial.LastUsedAt.Value.ToLocalTime().ToString("dd/MM/yyyy HH:mm")</p>
+                            }
+                        </div>
+
+                        <button class="secondary" @onclick="() => RemoverBiometriaAsync(credencial.Id)" disabled="@loading">
+                            Remover
+                        </button>
+                    </div>
+                }
+            }
+        </div>
+    </section>
+</main>
+
+<MenuInferior />
+
+@code {
+    private string pushMessage = string.Empty;
+    private string deviceMessage = string.Empty;
+    private string? passkeyMessage;
+    private bool loading;
+    private int? usuarioId;
+    private bool deviceSupported;
+    private bool passkeySupported;
+    private List<PasskeyCredentialDTO> credenciais = new();
+
+    protected override async Task OnInitializedAsync()
+    {
+        var userIdString = await JwtService.GetUserIdAsync();
+        usuarioId = int.TryParse(userIdString, out var userId) ? userId : null;
+
+        try
+        {
+            deviceSupported = await DeviceFeedbackService.IsSupportedAsync();
+        }
+        catch
+        {
+            deviceSupported = false;
+        }
+
+        try
+        {
+            passkeySupported = await PasskeyAuthService.IsSupportedAsync();
+            credenciais = await PasskeyAuthService.GetMyCredentialsAsync();
+        }
+        catch
+        {
+            passkeySupported = false;
+            credenciais = new();
+        }
+    }
+
+    private async Task AtivarPushAsync()
+    {
+        if (!usuarioId.HasValue)
+        {
+            pushMessage = "Usuario nao identificado.";
+            await DeviceFeedbackService.VibrateWarningAsync();
+            return;
+        }
+
+        loading = true;
+
+        try
+        {
+            var result = await PushNotificationService.SubscribeAsync(usuarioId.Value);
+            pushMessage = result.Message;
+
+            if (result.Success)
+            {
+                await DeviceFeedbackService.VibrateSuccessAsync();
+                return;
+            }
+
+            await DeviceFeedbackService.VibrateWarningAsync();
+        }
+        finally
+        {
+            loading = false;
+        }
+    }
+
+    private async Task EnviarTestePushAsync()
+    {
+        if (!usuarioId.HasValue)
+        {
+            pushMessage = "Usuario nao identificado.";
+            await DeviceFeedbackService.VibrateWarningAsync();
+            return;
+        }
+
+        loading = true;
+
+        try
+        {
+            var result = await PushNotificationService.SendTestAsync(usuarioId.Value);
+            pushMessage = result.Message;
+
+            if (result.Success)
+            {
+                await DeviceFeedbackService.VibrateSuccessAsync();
+                return;
+            }
+
+            await DeviceFeedbackService.VibrateWarningAsync();
+        }
+        finally
+        {
+            loading = false;
+        }
+    }
+
+    private async Task TestarVibracaoSucessoAsync()
+    {
+        var supported = await DeviceFeedbackService.IsSupportedAsync();
+        deviceMessage = supported
+            ? "Feedback de sucesso disparado."
+            : "Seu dispositivo ou navegador nao oferece suporte a vibracao.";
+
+        if (supported)
+        {
+            await DeviceFeedbackService.VibrateSuccessAsync();
+        }
+    }
+
+    private async Task TestarVibracaoAvisoAsync()
+    {
+        var supported = await DeviceFeedbackService.IsSupportedAsync();
+        deviceMessage = supported
+            ? "Feedback de aviso disparado."
+            : "Seu dispositivo ou navegador nao oferece suporte a vibracao.";
+
+        if (supported)
+        {
+            await DeviceFeedbackService.VibrateWarningAsync();
+        }
+    }
+
+    private async Task CadastrarBiometriaAsync()
+    {
+        loading = true;
+        passkeyMessage = null;
+
+        try
+        {
+            var resultado = await PasskeyAuthService.RegisterCurrentDeviceAsync();
+            passkeyMessage = resultado.Message;
+
+            if (resultado.Success)
+            {
+                await DeviceFeedbackService.VibrateSuccessAsync();
+                await CarregarCredenciaisAsync();
+            }
+            else
+            {
+                await DeviceFeedbackService.VibrateWarningAsync();
+            }
+        }
+        finally
+        {
+            loading = false;
+        }
+    }
+
+    private async Task RemoverBiometriaAsync(int credentialId)
+    {
+        loading = true;
+        passkeyMessage = null;
+
+        try
+        {
+            var resultado = await PasskeyAuthService.RemoveCredentialAsync(credentialId);
+            passkeyMessage = resultado.Message;
+
+            if (resultado.Success)
+            {
+                await DeviceFeedbackService.VibrateSuccessAsync();
+                await CarregarCredenciaisAsync();
+            }
+            else
+            {
+                await DeviceFeedbackService.VibrateWarningAsync();
+            }
+        }
+        finally
+        {
+            loading = false;
+        }
+    }
+
+    private async Task CarregarCredenciaisAsync()
+    {
+        credenciais = await PasskeyAuthService.GetMyCredentialsAsync();
+    }
+}
