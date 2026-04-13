@@ -4,6 +4,7 @@
 @inject ServicoService ServicoService
 @inject AnimalService AnimalService
 @inject TipoPagamentoService TipoPagamentoService
+@inject DeviceFeedbackService DeviceFeedbackService
 @using PatinhasMagicasPWA.Extensions
 
 <main id="pagamento">
@@ -164,6 +165,8 @@
         }
     }
 
+    private int? previousTipoPagamentoId;
+
     private async Task Confirmacao()
     {
         // Monta DTO e chama API para criar agendamento
@@ -178,11 +181,24 @@
         var agendamento = await AgendamentoService.CreateAsync(createDto);
         if (agendamento != null)
         {
+            await DeviceFeedbackService.VibrateSuccessAsync();
             Navigation.NavigateTo($"/Confirmacao/{agendamento.Id}");
         }
         else
         {
+            await DeviceFeedbackService.VibrateWarningAsync();
             Navigation.NavigateTo("/agendamentoServico");
+        }
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        await base.OnAfterRenderAsync(firstRender);
+
+        if (paymentModel.TipoPagamentoId > 0 && paymentModel.TipoPagamentoId != previousTipoPagamentoId)
+        {
+            previousTipoPagamentoId = paymentModel.TipoPagamentoId;
+            await DeviceFeedbackService.VibrateSelectionAsync();
         }
     }
 
