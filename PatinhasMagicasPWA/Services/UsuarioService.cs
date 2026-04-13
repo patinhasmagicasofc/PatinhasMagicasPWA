@@ -30,20 +30,37 @@ namespace PatinhasMagicasPWA.Services
             };
         }
 
-        public async Task<bool> Cadastrar(CadastroUsuarioDTO cadastroUsuario)
+        public async Task<OperationResultDTO> Cadastrar(CadastroUsuarioDTO cadastroUsuario)
         {
             var usuario = await MapCadastroUsuarioToUsuario(cadastroUsuario);
 
-            var response = await _http.PostAsJsonAsync("api/usuario", usuario);
-
-            if (!response.IsSuccessStatusCode)
+            try
             {
-                return false;
+                var response = await _http.PostAsJsonAsync("api/usuario", usuario);
+                var content = await response.Content.ReadAsStringAsync();
+
+                if (!response.IsSuccessStatusCode)
+                {
+                    return new OperationResultDTO
+                    {
+                        Success = false,
+                        Message = AuthService.ExtractErrorMessage(content)
+                    };
+                }
+
+                return new OperationResultDTO
+                {
+                    Success = true
+                };
             }
-
-            var content = await response.Content.ReadAsStringAsync();
-
-            return true;
+            catch
+            {
+                return new OperationResultDTO
+                {
+                    Success = false,
+                    Message = "Erro ao conectar com a API."
+                };
+            }
         }
 
 

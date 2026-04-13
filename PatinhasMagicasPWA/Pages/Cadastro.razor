@@ -110,14 +110,14 @@
 
         carregando = false;
 
-        if (result)
+        if (result.Success)
         {
             await AuthService.Login(usuario.Email!, usuario.Senha!);
             Navigation.NavigateTo("/home");
             return;
         }
 
-        mensagemGeral = "Nao foi possivel concluir o cadastro.";
+        mensagemGeral = result.Message ?? "Nao foi possivel concluir o cadastro.";
     }
 
 }

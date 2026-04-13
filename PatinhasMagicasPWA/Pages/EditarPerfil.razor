@@ -27,10 +27,15 @@
 
                 <p class="helper-text">Os blocos comecam bloqueados. Libere a edicao somente do que quiser alterar.</p>
 
-                <div class="card-perfil">
+                <div class="card-perfil @(editandoUsuario ? "is-editing" : string.Empty)">
                     <p class="secao-titulo">
-                        <span class="material-symbols-outlined">Person</span> Dados Pessoais
+                        <span class="material-symbols-outlined">person</span> Dados Pessoais
                     </p>
+
+                    @if (editandoUsuario)
+                    {
+                        <p class="status-edicao">Edicao ativa. Altere os campos desejados e salve quando terminar.</p>
+                    }
 
                     @if (!string.IsNullOrWhiteSpace(mensagemUsuario))
                     {
@@ -93,16 +98,21 @@
                             </button>
                         }
 
-                        <button type="button" class="btn-acao-salvar" @onclick="SalvarDadosUsuario" disabled="@(!PodeSalvarUsuario || salvandoUsuario)">
+                        <button type="button" class="btn-acao-salvar" @onclick="SalvarDadosUsuario" disabled="@salvandoUsuario">
                             <span class="material-symbols-outlined">save</span>Salvar Dados
                         </button>
                     </div>
                 </div>
 
-                <div class="card-perfil">
+                <div class="card-perfil @(editandoEndereco ? "is-editing" : string.Empty)">
                     <p class="secao-titulo">
                         <span class="material-symbols-outlined">home</span> Endereco
                     </p>
+
+                    @if (editandoEndereco)
+                    {
+                        <p class="status-edicao">Edicao ativa. Voce pode alterar os campos manualmente ou preencher pelo CEP.</p>
+                    }
 
                     @if (!string.IsNullOrWhiteSpace(mensagemEndereco))
                     {
@@ -188,7 +198,7 @@
                             </button>
                         }
 
-                        <button type="button" class="btn-acao-salvar" @onclick="SalvarEndereco" disabled="@(!PodeSalvarEndereco || salvandoEndereco)">
+                        <button type="button" class="btn-acao-salvar" @onclick="SalvarEndereco" disabled="@salvandoEndereco">
                             <span class="material-symbols-outlined">save</span>Salvar Endereco
                         </button>
                     </div>
@@ -334,13 +344,15 @@
         tentouSalvarUsuario = true;
         mensagemUsuario = string.Empty;
 
-        if (!PodeSalvarUsuario)
+        if (!DadosUsuarioValidos)
         {
-            if (!DadosUsuarioValidos)
-            {
-                mensagemUsuario = "Preencha corretamente os campos obrigatorios do perfil.";
-            }
+            mensagemUsuario = "Preencha corretamente os campos obrigatorios do perfil.";
+            return;
+        }
 
+        if (!UsuarioFoiAlterado)
+        {
+            mensagemUsuario = "Altere ao menos um dado antes de salvar.";
             return;
         }
 
@@ -435,13 +447,15 @@
         tentouSalvarEndereco = true;
         mensagemEndereco = string.Empty;
 
-        if (!PodeSalvarEndereco)
+        if (!DadosEnderecoValidos)
         {
-            if (!DadosEnderecoValidos)
-            {
-                mensagemEndereco = "Preencha corretamente os campos obrigatorios do endereco.";
-            }
+            mensagemEndereco = "Preencha corretamente os campos obrigatorios do endereco.";
+            return;
+        }
 
+        if (!EnderecoFoiAlterado)
+        {
+            mensagemEndereco = "Altere ao menos um dado do endereco antes de salvar.";
             return;
         }
 
