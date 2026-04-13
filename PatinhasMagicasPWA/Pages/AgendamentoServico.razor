@@ -3,7 +3,6 @@
 @inject AnimalService AnimalService
 @inject ServicoService ServicoService
 @inject AgendamentoService AgendamentoService
-@inject DeviceFeedbackService DeviceFeedbackService
 
 <main id="agendamento-servico">
 
@@ -132,13 +131,8 @@
         {
             if (_selectedAnimalId != value)
             {
-                var hadPreviousSelection = _selectedAnimalId.HasValue;
                 _selectedAnimalId = value;
                 agendamento.AnimalId = value ?? 0;
-                if (value.HasValue && hadPreviousSelection)
-                {
-                    _ = DeviceFeedbackService.VibrateSelectionAsync();
-                }
                 _ = OnAnimalChangedAsync();
             }
         }
@@ -149,13 +143,8 @@
         get => _selectedServicoId;
         set
         {
-            var changed = _selectedServicoId != value;
             _selectedServicoId = value;
             agendamento.ServicoId = value ?? 0;
-            if (changed && value.HasValue)
-            {
-                _ = DeviceFeedbackService.VibrateSelectionAsync();
-            }
         }
     }
 
@@ -244,11 +233,10 @@
         Navigation.NavigateTo("/ServicoConfirmacao");
     }
 
-    private async Task Pagamento()
+    private void Pagamento()
     {
         // navega para a tela de pagamento carregando os dados selecionados
         var dataEncoded = agendamento.DataAgendamento.HasValue ? Uri.EscapeDataString(agendamento.DataAgendamento.Value.ToString("s")) : string.Empty;
-        await DeviceFeedbackService.VibrateSelectionAsync();
         Navigation.NavigateTo($"/pagamento?animalId={selectedAnimalId ?? 0}&servicoId={selectedServicoId ?? 0}&data={dataEncoded}");
     }
 

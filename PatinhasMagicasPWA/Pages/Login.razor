@@ -3,7 +3,6 @@
 @inject NavigationManager Navigation
 @inject AuthService AuthService
 @inject PasskeyAuthService PasskeyAuthService
-@inject DeviceFeedbackService DeviceFeedbackService
 
 <main class="@(navegando ? "saindo" : string.Empty)">
     @if (navegando)
@@ -108,7 +107,6 @@
 
         if (resultado.Sucesso)
         {
-            await DeviceFeedbackService.VibrateSuccessAsync();
             navegando = true;
             await Task.Delay(450);
             Navigation.NavigateTo("/home");
@@ -117,7 +115,6 @@
 
         carregando = false;
         mensagemErro = resultado.Mensagem;
-        await DeviceFeedbackService.VibrateWarningAsync();
     }
 
     private async Task EntrarComBiometria()
@@ -132,7 +129,6 @@
 
         if (resultado.Sucesso)
         {
-            await DeviceFeedbackService.VibrateSuccessAsync();
             navegando = true;
             await Task.Delay(450);
             Navigation.NavigateTo("/home");
@@ -141,6 +137,5 @@
 
         carregandoBiometria = false;
         mensagemErro = resultado.Mensagem;
-        await DeviceFeedbackService.VibrateWarningAsync();
     }
 }

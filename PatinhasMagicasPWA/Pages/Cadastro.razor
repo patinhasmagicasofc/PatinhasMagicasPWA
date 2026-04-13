@@ -5,7 +5,6 @@
 @inject UsuarioService UsuarioService
 @inject AuthService AuthService
 @inject IJSRuntime JS
-@inject DeviceFeedbackService DeviceFeedbackService
 
 <main class="login-page">
     <div id="container-title-logo">
@@ -114,13 +113,11 @@
         if (result.Success)
         {
             await AuthService.Login(usuario.Email!, usuario.Senha!);
-            await DeviceFeedbackService.VibrateSuccessAsync();
             Navigation.NavigateTo("/home");
             return;
         }
 
         mensagemGeral = result.Message ?? "Nao foi possivel concluir o cadastro.";
-        await DeviceFeedbackService.VibrateWarningAsync();
     }
 
 }

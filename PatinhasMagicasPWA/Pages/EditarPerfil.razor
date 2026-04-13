@@ -5,7 +5,6 @@
 @inject EnderecoService EnderecoService
 @inject CepService CepService
 @inject AuthService AuthService
-@inject DeviceFeedbackService DeviceFeedbackService
 
 <main>
     @if (usuario is null)
@@ -318,7 +317,6 @@
     {
         editandoUsuario = true;
         LimparMensagensUsuario();
-        _ = DeviceFeedbackService.VibrateSelectionAsync();
     }
 
     private void DescartarEdicaoUsuario()
@@ -349,14 +347,12 @@
         if (!DadosUsuarioValidos)
         {
             mensagemUsuario = "Preencha corretamente os campos obrigatorios do perfil.";
-            await DeviceFeedbackService.VibrateWarningAsync();
             return;
         }
 
         if (!UsuarioFoiAlterado)
         {
             mensagemUsuario = "Altere ao menos um dado antes de salvar.";
-            await DeviceFeedbackService.VibrateWarningAsync();
             return;
         }
 
@@ -369,7 +365,6 @@
             if (!perfilAtualizado)
             {
                 mensagemUsuario = "Falha ao atualizar o perfil.";
-                await DeviceFeedbackService.VibrateWarningAsync();
                 return;
             }
 
@@ -377,12 +372,10 @@
             editandoUsuario = false;
             LimparMensagensUsuario();
             mensagemUsuario = "Dados do perfil atualizados com sucesso.";
-            await DeviceFeedbackService.VibrateSuccessAsync();
         }
         catch
         {
             mensagemUsuario = "Erro ao salvar dados do perfil.";
-            await DeviceFeedbackService.VibrateWarningAsync();
         }
         finally
         {
@@ -394,7 +387,6 @@
     {
         editandoEndereco = true;
         LimparMensagensEndereco();
-        _ = DeviceFeedbackService.VibrateSelectionAsync();
     }
 
     private void DescartarEdicaoEndereco()
@@ -426,7 +418,6 @@
             if (cepEncontrado is null || cepEncontrado.Erro)
             {
                 mensagemEndereco = "Nao foi possivel localizar esse CEP.";
-                await DeviceFeedbackService.VibrateWarningAsync();
                 return;
             }
 
@@ -435,12 +426,10 @@
             EnderecoAtual.Bairro = cepEncontrado.Bairro;
             EnderecoAtual.Cidade = cepEncontrado.Localidade;
             EnderecoAtual.Estado = (cepEncontrado.Uf ?? string.Empty).ToUpperInvariant();
-            await DeviceFeedbackService.VibrateSelectionAsync();
         }
         catch
         {
             mensagemEndereco = "Erro ao buscar o CEP.";
-            await DeviceFeedbackService.VibrateWarningAsync();
         }
         finally
         {
@@ -461,14 +450,12 @@
         if (!DadosEnderecoValidos)
         {
             mensagemEndereco = "Preencha corretamente os campos obrigatorios do endereco.";
-            await DeviceFeedbackService.VibrateWarningAsync();
             return;
         }
 
         if (!EnderecoFoiAlterado)
         {
             mensagemEndereco = "Altere ao menos um dado do endereco antes de salvar.";
-            await DeviceFeedbackService.VibrateWarningAsync();
             return;
         }
 
@@ -484,7 +471,6 @@
             if (!enderecoAtualizado)
             {
                 mensagemEndereco = "Falha ao atualizar o endereco.";
-                await DeviceFeedbackService.VibrateWarningAsync();
                 return;
             }
 
@@ -492,12 +478,10 @@
             editandoEndereco = false;
             LimparMensagensEndereco();
             mensagemEndereco = "Endereco atualizado com sucesso.";
-            await DeviceFeedbackService.VibrateSuccessAsync();
         }
         catch
         {
             mensagemEndereco = "Erro ao salvar o endereco.";
-            await DeviceFeedbackService.VibrateWarningAsync();
         }
         finally
         {
