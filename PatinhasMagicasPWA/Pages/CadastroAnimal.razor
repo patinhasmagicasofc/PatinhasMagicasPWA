@@ -195,7 +195,11 @@
         var result = await AnimalService.Cadastrar(animal);
         if (result)
         {
+            await DeviceFeedbackService.VibrateSuccessAsync();
             Navigation.NavigateTo("/MeusAnimais");
+            return;
         }
+
+        await DeviceFeedbackService.VibrateWarningAsync();
     }
 }
